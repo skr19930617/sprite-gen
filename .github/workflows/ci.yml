@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Lint, Typecheck, Unit Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build (production)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SITE_URL: http://localhost:3000
+          NEXT_PUBLIC_SUPABASE_URL: https://example.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: anon-build-token
+          SUPABASE_SERVICE_ROLE_KEY: svc-build-token
+          ANTHROPIC_API_KEY: sk-ant-build-token
+          STRIPE_SECRET_KEY: sk_test_build
+          STRIPE_WEBHOOK_SECRET: whsec_build
+          STRIPE_PRICE_ID_MONTHLY: price_build
+
+      - name: Verify no server secrets leak into client bundle
+        run: |
+          if grep -RInE "(SUPABASE_SERVICE_ROLE_KEY|ANTHROPIC_API_KEY|STRIPE_SECRET_KEY|STRIPE_WEBHOOK_SECRET)" .next/static 2>/dev/null; then
+            echo "::error::Server-only env var leaked into client bundle"
+            exit 1
+          fi
+          echo "OK: no server-side secrets present in client bundle."

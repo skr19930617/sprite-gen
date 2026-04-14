@@ -1,4 +1,5 @@
 <!-- specflow:managed:start -->
+
 ## Contract Discipline
 
 - Prefer explicit, enforceable contracts over implicit behavior.
