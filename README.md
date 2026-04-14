@@ -56,6 +56,8 @@ MVP は **魚専用・固定テンプレート型・同期生成** に絞って�
 OpenSpec 上では、アプリ本体の実装はほぼ揃っています。
 
 - Scaffold / Auth / Upload / LLM / Mask UI / Renderer / Generate / Persistence / Billing / Quota / Security の主要項目は概ね完了
+- 開発用 Supabase project への migration 適用は確認済み
+- ローカル開発では Anthropic API に加えて Claude Code CLI を LLM バックエンドとして選択可能
 - 現在フェーズ: `design-fix-review`
 - Round: `4`
 - Open High Findings: `0`
@@ -73,7 +75,7 @@ OpenSpec 上では、アプリ本体の実装はほぼ揃っています。
 
 主な残タスクは次の通りです。
 
-- Supabase の開発 / 本番プロジェクト作成と migration のクリーン適用確認
+- Supabase の本番プロジェクト作成と migration のクリーン適用確認
 - Stripe の Product / Price 作成
 - `buildProjectJson` と UTC 月境界に関する追加ユニットテスト
 - `open-in-editor` 後のマスク画面で前回生成結果を見せる UI 補強
@@ -124,6 +126,10 @@ cp .env.example .env.local
 
 その後、Anthropic / Supabase / Stripe の値を設定してください。
 
+ローカルで Claude Code CLI を LLM バックエンドに使う場合は、Anthropic API の代わりに `.env.local` で `LLM_BACKEND=claude_code_cli` と `LLM_CLI_COMMAND=claude` を設定してください。
+
+現状のローカル開発では、**Supabase は必須、Stripe は任意** です。認証・保存・生成フロー確認には Supabase が必要ですが、課金画面や upgrade 導線を触らない限り Stripe はプレースホルダーのままでも進められます。
+
 ### 3. 開発サーバーを起動
 
 ```bash
@@ -142,6 +148,14 @@ npm test
 
 E2E や live integration は外部サービスの準備が必要です。
 
+### 今すぐ試す 5 ステップ
+
+1. `.env.local` に Supabase の URL / keys を設定する
+2. ローカル LLM を使うなら `LLM_BACKEND=claude_code_cli` を設定する
+3. `npm run dev` を実行する
+4. `/signup` でアカウントを作成して `/login` する
+5. `/upload` から透過PNGとプロンプトを送って動作確認する
+
 ## 環境変数
 
 `.env.example` にある主な変数は次の通りです。
@@ -153,6 +167,8 @@ E2E や live integration は外部サービスの準備が必要です。
 | `NEXT_PUBLIC_SUPABASE_URL`           | Supabase プロジェクトURL                     |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY`      | Supabase 公開キー                            |
 | `SUPABASE_SERVICE_ROLE_KEY`          | サーバー側の管理操作用キー                   |
+| `LLM_BACKEND`                        | LLM 実行方式。`anthropic` または `claude_code_cli` |
+| `LLM_CLI_COMMAND`                    | CLI 実行コマンド。既定は `claude`            |
 | `STRIPE_SECRET_KEY`                  | Stripe API のサーバー側キー                  |
 | `STRIPE_WEBHOOK_SECRET`              | Stripe Webhook 検証用シークレット            |
 | `STRIPE_PRICE_ID_MONTHLY`            | 月額プランの Price ID                        |
@@ -162,6 +178,33 @@ E2E や live integration は外部サービスの準備が必要です。
 
 - `SUPABASE_SERVICE_ROLE_KEY`、`STRIPE_SECRET_KEY`、`ANTHROPIC_API_KEY` はクライアントへ露出しない前提です
 - 開発環境と本番環境で必ず分けて設定してください
+
+### 現在のローカル検証で必要なもの
+
+- **必須**: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+- **LLM 用にどちらか必須**:
+  - `ANTHROPIC_API_KEY` + `LLM_BACKEND=anthropic`
+  - または `LLM_BACKEND=claude_code_cli` + `LLM_CLI_COMMAND=claude`
+- **任意**: Stripe 関連 env（`/billing` の表示以外、実課金導線を試す時だけ必要）
+
+### ローカルで Claude Code CLI を使う
+
+ローカルでサーバーを動かしている間だけ Anthropic API の代わりに Claude Code CLI を使いたい場合は、`.env.local` に次を設定します。
+
+```dotenv
+LLM_BACKEND=claude_code_cli
+LLM_CLI_COMMAND=claude
+```
+
+この場合、`/api/upload` と `/api/llm/parse` の自然言語解析は **ローカル開発時のみ** `claude -p` 経由で実行されます。CLI 出力は JSON として解釈され、既存の `LlmAnimationSpec` スキーマで検証されます。
+
+補足:
+
+- CLI が未インストール、または `claude -p` が失敗する場合は upstream error 扱いになります
+- source PNG がある場合は一時ファイルの参照パスを CLI に渡します。画像の扱いはローカル CLI の能力に依存します
+- 既定値は引き続き `anthropic` です
+- `LLM_BACKEND=claude_code_cli` のときはローカル開発向けの経路が使われ、`ANTHROPIC_API_KEY` はその実行では参照されません
+- Stripe の env がプレースホルダーのままでも、認証・upload・mask・generate のローカル検証は可能です
 
 ## 主な画面・ルート
 

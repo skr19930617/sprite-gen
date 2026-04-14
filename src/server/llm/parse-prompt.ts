@@ -1,4 +1,12 @@
+import { env } from '@/lib/env';
 import { getAnthropicClient } from './anthropic';
+import { parsePromptViaClaudeCodeCli } from './cli';
+import {
+  DEFAULT_TIMEOUT_MS,
+  MODEL,
+  SYSTEM_PROMPT,
+  TOOL_NAME,
+} from './contracts';
 import {
   InvalidLlmResponseError,
   LlmTimeoutError,
@@ -10,32 +18,6 @@ import {
   type LlmAnimationSpec,
 } from './schema';
 
-const MODEL = 'claude-haiku-4-5-20251001';
-const DEFAULT_TIMEOUT_MS = 10_000;
-const TOOL_NAME = 'emit_animation_spec';
-
-const SYSTEM_PROMPT = `You are an animation parameter extractor for a 2D pixel-fish sprite generator.
-You must call the tool \`${TOOL_NAME}\` exactly once with structured arguments.
-
-Vocabulary (use these values verbatim):
-- entity_type: "fish"
-- animation_type: one of swim_slow | turn | approach_food | eat
-- required_regions / optional_regions: subset of [body, tail, mouth, fin]
-- params.speed: slow | medium
-- params.amplitude: small | medium
-- params.emphasis: none | tail | mouth | fin
-- params.loop: true (default) | false
-
-Mapping hints:
-- "ゆっくり泳ぐ" / "swim slowly" -> swim_slow, requires [body, tail]
-- "向きを変える" / "turn around" -> turn, requires [body, tail]
-- "餌に近づく" / "approach food" -> approach_food, requires [body, tail]
-- "食べる" / "餌を食べる" / "open mouth" -> eat, requires [body, tail, mouth]
-
-Always include "body" in required_regions. Pick optional_regions for parts the
-animation may emphasize (e.g. fin during turn). Set params.loop=false ONLY when
-the prompt explicitly says "once" / "1回" / "single play"; otherwise true.`;
-
 export type ParsePromptOptions = {
   /** Override for tests / timeouts. */
   timeoutMs?: number;
@@ -43,16 +25,11 @@ export type ParsePromptOptions = {
   sourceImageBase64?: string | null;
 };
 
-/**
- * Send `prompt` to Claude with `tool_use` forced and parse the structured
- * arguments via Zod. Throws InvalidLlmResponseError on schema violation,
- * LlmTimeoutError on >10s, LlmUpstreamError on transport failure.
- */
-export const parsePrompt = async (
+const parsePromptViaAnthropic = async (
   prompt: string,
-  options: ParsePromptOptions = {},
-): Promise<LlmAnimationSpec> => {
-  const { timeoutMs = DEFAULT_TIMEOUT_MS, sourceImageBase64 = null } = options;
+  timeoutMs: number,
+  sourceImageBase64: string | null,
+): Promise<unknown> => {
   const client = getAnthropicClient();
 
   const userContent: Array<Record<string, unknown>> = [];
@@ -123,10 +100,32 @@ export const parsePrompt = async (
     );
   }
 
-  const parsed = llmAnimationSpecSchema.safeParse(toolUse.input);
+  return toolUse.input;
+};
+
+/**
+ * Send `prompt` to Claude with `tool_use` forced and parse the structured
+ * arguments via Zod. Throws InvalidLlmResponseError on schema violation,
+ * LlmTimeoutError on >10s, LlmUpstreamError on transport failure.
+ */
+export const parsePrompt = async (
+  prompt: string,
+  options: ParsePromptOptions = {},
+): Promise<LlmAnimationSpec> => {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, sourceImageBase64 = null } = options;
+  const rawResult =
+    env.LLM_BACKEND === 'claude_code_cli'
+      ? await parsePromptViaClaudeCodeCli({
+          prompt,
+          timeoutMs,
+          sourceImageBase64,
+        })
+      : await parsePromptViaAnthropic(prompt, timeoutMs, sourceImageBase64);
+
+  const parsed = llmAnimationSpecSchema.safeParse(rawResult);
   if (!parsed.success) {
     throw new InvalidLlmResponseError(
-      'tool_use input failed schema validation',
+      'LLM structured output failed schema validation',
       parsed.error.issues,
     );
   }

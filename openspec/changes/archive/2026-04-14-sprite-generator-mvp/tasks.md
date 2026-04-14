@@ -5,17 +5,18 @@
 - [x] 1.3 Add Vitest + @testing-library/react for unit tests
 - [x] 1.4 Add Playwright for E2E tests with base config
 - [x] 1.5 Create `.env.example` listing all required env vars (`ANTHROPIC_API_KEY`, `SUPABASE_*`, `STRIPE_*`, `NEXT_PUBLIC_SITE_URL`)
+- [x] 1.5.1 Add local-dev LLM backend env vars (`LLM_BACKEND`, `LLM_CLI_COMMAND`) for optional Claude Code CLI execution
 - [x] 1.6 Add `npm run typecheck`, `lint`, `test`, `test:e2e` scripts
 - [x] 1.7 Set up GitHub Actions CI (typecheck + lint + unit test on push)
 
 ## 2. Supabase Setup
 
-- [ ] 2.1 Create Supabase project (dev + prod) and record project refs (manual / external)
+- [x] 2.1 Create Supabase project (dev + prod) and record project refs (manual / external; dev project provisioned and linked)
 - [x] 2.2 Write `supabase/migrations/0001_init.sql` with `profiles`, `projects`, `generations`, `plan_changes`, `drafts` tables and indexes (with `originating_project_id` FK)
 - [x] 2.3 Write `supabase/migrations/0002_rls.sql` enforcing `user_id = auth.uid()` policies on all tables (including `drafts`)
 - [x] 2.4 Create private Storage bucket `projects` with read policy `auth.uid()::text = (storage.foldername(name))[1]` (SQL written in `supabase/migrations/0003_storage.sql`; bucket creation runs as part of that migration)
 - [x] 2.5 Add `supabase/seed.sql` for local dev test data (optional test users)
-- [ ] 2.6 Verify migrations apply cleanly on a fresh Supabase project (pending Supabase project provisioning, see 2.1)
+- [x] 2.6 Verify migrations apply cleanly on a fresh Supabase project (verified via `supabase db push` on the linked dev project)
 
 ## 3. Auth (user-auth-billing partial)
 
@@ -56,6 +57,8 @@
 - [x] 5.8 Add 10s timeout on the Anthropic call; propagate timeout as 504
 - [x] 5.9 Unit tests with Anthropic SDK mocked (valid / invalid schema / missing tool_use / timeout / upstream error)
 - [x] 5.10 Live Anthropic integration test gated by `RUN_LIVE_ANTHROPIC=1` + `ANTHROPIC_API_KEY` (tests/integration/anthropic-live.test.ts)
+- [x] 5.10.1 Add optional Claude Code CLI backend for `parsePrompt()` behind explicit env switch (`LLM_BACKEND=claude_code_cli`) while preserving the Anthropic path
+- [x] 5.10.2 Add CLI-path unit tests covering backend selection, fenced/strict JSON parsing, timeout, and upstream error mapping
 
 ## 6. Region Masking UI (region-masking)
 

@@ -8,6 +8,9 @@ import 'server-only';
 
 import { clientEnv } from './env-client';
 
+const LLM_BACKENDS = ['anthropic', 'claude_code_cli'] as const;
+type LlmBackend = (typeof LLM_BACKENDS)[number];
+
 const required = (name: string, value: string | undefined): string => {
   if (!value || value.length === 0) {
     throw new Error(`Missing required env var: ${name}`);
@@ -15,9 +18,26 @@ const required = (name: string, value: string | undefined): string => {
   return value;
 };
 
+const optional = (value: string | undefined): string | undefined => {
+  const trimmed = value?.trim();
+  return trimmed && trimmed.length > 0 ? trimmed : undefined;
+};
+
 export const env = {
   ...clientEnv,
   // Server only
+  get LLM_BACKEND(): LlmBackend {
+    const value = process.env.LLM_BACKEND?.trim() ?? 'anthropic';
+    if ((LLM_BACKENDS as readonly string[]).includes(value)) {
+      return value as LlmBackend;
+    }
+    throw new Error(
+      `Invalid LLM_BACKEND: ${value}. Expected one of ${LLM_BACKENDS.join(', ')}`,
+    );
+  },
+  get LLM_CLI_COMMAND(): string {
+    return optional(process.env.LLM_CLI_COMMAND) ?? 'claude';
+  },
   get SUPABASE_SERVICE_ROLE_KEY(): string {
     return required(
       'SUPABASE_SERVICE_ROLE_KEY',
