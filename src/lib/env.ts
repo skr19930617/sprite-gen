@@ -1,8 +1,12 @@
 /**
- * Centralized env access. Throws at startup if a required server-side var is
- * missing in production (validated lazily on first read so build-time SSG
- * still works without secrets).
+ * Server-side env access. DO NOT import from 'use client' components —
+ * use `@/lib/env-client` for NEXT_PUBLIC_* vars instead.
+ *
+ * Re-exports client env so server code can use a single import.
  */
+import 'server-only';
+
+import { clientEnv } from './env-client';
 
 const required = (name: string, value: string | undefined): string => {
   if (!value || value.length === 0) {
@@ -12,23 +16,8 @@ const required = (name: string, value: string | undefined): string => {
 };
 
 export const env = {
-  // Public
-  get NEXT_PUBLIC_SITE_URL(): string {
-    return required('NEXT_PUBLIC_SITE_URL', process.env.NEXT_PUBLIC_SITE_URL);
-  },
-  get NEXT_PUBLIC_SUPABASE_URL(): string {
-    return required(
-      'NEXT_PUBLIC_SUPABASE_URL',
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-    );
-  },
-  get NEXT_PUBLIC_SUPABASE_ANON_KEY(): string {
-    return required(
-      'NEXT_PUBLIC_SUPABASE_ANON_KEY',
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    );
-  },
-  // Server only (do NOT read from client code).
+  ...clientEnv,
+  // Server only
   get SUPABASE_SERVICE_ROLE_KEY(): string {
     return required(
       'SUPABASE_SERVICE_ROLE_KEY',
