@@ -1,8 +1,11 @@
 # user-auth-billing Specification
 
 ## Purpose
+
 TBD - created by archiving change sprite-generator-mvp. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Authentication required
 
 The system SHALL require users to log in before uploading images, generating animations, or saving projects. Unauthenticated users MUST only see the marketing landing page and login screen.
@@ -81,4 +84,3 @@ The system SHALL record every plan change (free→paid, paid→free) with a time
 
 - **WHEN** a user's plan changes due to a Stripe event
 - **THEN** a row is inserted into the plan-change audit table with user id, old plan, new plan, timestamp, and Stripe event id
-

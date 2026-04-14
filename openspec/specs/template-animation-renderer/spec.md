@@ -1,8 +1,11 @@
 # template-animation-renderer Specification
 
 ## Purpose
+
 TBD - created by archiving change sprite-generator-mvp. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Four fixed animation templates
 
 The system SHALL support exactly four animation templates: `swim_slow`, `turn`, `approach_food`, `eat`. Each template MUST be implemented as a deterministic function of (source image, mask, params) so that identical inputs produce identical outputs.
@@ -81,4 +84,3 @@ The system SHALL produce a valid animation even when a required region mask is e
 
 - **WHEN** `animation_type` = "swim_slow" is rendered with an empty tail mask but non-empty body mask
 - **THEN** the renderer produces frames with small periodic body deformation only, completing successfully
-

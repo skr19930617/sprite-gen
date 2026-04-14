@@ -1,8 +1,11 @@
 # nl-animation-parsing Specification
 
 ## Purpose
+
 TBD - created by archiving change sprite-generator-mvp. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: LLM fixed-structure output
 
 The system SHALL convert a natural-language prompt into a fixed-structure JSON result using Anthropic Claude API (`claude-haiku-4-5` default). The LLM MUST return exactly the following keys: `entity_type`, `animation_type`, `required_regions`, `optional_regions`, `params`. Free-form rendering instructions MUST NOT be accepted.
@@ -75,4 +78,3 @@ The system SHALL keep the Anthropic API key on the server side only. The key MUS
 
 - **WHEN** the production client bundle is inspected
 - **THEN** it contains no reference to the Anthropic API key
-

@@ -135,6 +135,7 @@ RLS: すべてのテーブルで `user_id = auth.uid()` を強制。`plan_change
 **UTC 正規化契約:** `timestamptz` 列は Postgres が常に UTC で内部格納する。`default now()` は UTC 値を返す（表示のみ session tz 依存）ため migration はこれで十分。アプリ層から明示値を挿入する場合は `new Date().toISOString()` (ISO8601 UTC、末尾 `Z` 固定) を渡す。`at time zone 'utc'` を `timestamptz` 列の default として使うと naive `timestamp` に変換されて型が崩れるため禁止する。
 
 **月次集計の UTC 境界:** クォータ用の月次集計は、DB セッションのタイムゾーンに依存しない UTC 月境界で行う。`countSuccessGenerationsThisMonth(userId)` は次のいずれかで開始境界を決定する:
+
 - サーバー側 TS で `const start = new Date(); start.setUTCDate(1); start.setUTCHours(0, 0, 0, 0);` を計算し `.toISOString()` で `gte('created_at', start)` に渡す（MVP 採用）
 - もしくは SQL 側で `date_trunc('month', now() at time zone 'utc')` を使用する
 
@@ -181,7 +182,7 @@ proposal の「失敗分は保存されない / 再生成はカウントしな�
   2. 画像系は全て 1 時間の signed URL を発行して client に渡す
   3. MaskEditor は source / mask を canvas に描画するほか、`gif_path` が非 null の場合「前回の生成結果」セクションを表示（GIF プレビュー + spritesheet サムネ + renderer_version バッジ）
   4. ユーザーが mask を編集すると「前回結果は再生成まで古い状態のまま」である旨の薄い注意を表示するが、再生成を強制しない（確認用に残す）
-  この復元はマスクのみ変更して再生成する典型シナリオで前回出力を即座に参照できることを保証する。draft 固有のマスクがまだ存在しない新規アップロード直後はこのセクションは表示しない。
+     この復元はマスクのみ変更して再生成する典型シナリオで前回出力を即座に参照できることを保証する。draft 固有のマスクがまだ存在しない新規アップロード直後はこのセクションは表示しない。
 
 - **`project.json` の top-level スキーマ (project-persistence spec と一致):** トップレベルキーは **正確に** `version` / `entity_type` / `source_image_path` / `mask_image_path` / `prompt` / `llm_result` / `final_animation_type` / `final_params` / `region_palette` / `outputs` / `renderer_version` / `created_at` / `updated_at` のみ。アーティファクトのパスは画像系 (`source_image_path` / `mask_image_path`) と生成物 (`outputs: { gif_path, spritesheet_path }`) で分離する。DB の `projects` テーブルの列名 (`source_path` / `mask_path` / `gif_path` / `spritesheet_path`) は内部表現に過ぎず、シリアライザは必ず spec の top-level キーに変換する。
 - **Draft クリーンアップ / 保持:**

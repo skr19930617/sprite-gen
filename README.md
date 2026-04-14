@@ -20,36 +20,36 @@ MVP は **魚専用・固定テンプレート型・同期生成** に絞って�
 
 - 透過PNGアップロードとクライアント / サーバー両側の入力バリデーション
 - 自然言語プロンプトの構造化解析
-	- `entity_type`
-	- `animation_type`
-	- `required_regions`
-	- `optional_regions`
-	- `params`
+  - `entity_type`
+  - `animation_type`
+  - `required_regions`
+  - `optional_regions`
+  - `params`
 - 4 ラベルのマスク編集 UI
-	- `body`
-	- `tail`
-	- `mouth`
-	- `fin`
+  - `body`
+  - `tail`
+  - `mouth`
+  - `fin`
 - 編集機能
-	- ペン
-	- 消しゴム
-	- 塗りつぶし
-	- ズーム
-	- Undo
-	- 補正フィルタ
+  - ペン
+  - 消しゴム
+  - 塗りつぶし
+  - ズーム
+  - Undo
+  - 補正フィルタ
 - 固定テンプレートによる 1 アニメーション種別ずつの生成
-	- `swim_slow`
-	- `turn`
-	- `approach_food`
-	- `eat`
+  - `swim_slow`
+  - `turn`
+  - `approach_food`
+  - `eat`
 - GIF とスプライトシートPNGの生成
 - Supabase による draft / project 永続化
 - 保存済み project の一覧・詳細・再編集・再生成
 - Supabase Auth による認証
 - Stripe による無料 / 有料プラン基盤
 - 無料プラン制限
-	- 月 10 回まで生成成功
-	- 保存 5 件まで
+  - 月 10 回まで生成成功
+  - 保存 5 件まで
 
 ## 実装状況
 
@@ -90,9 +90,9 @@ OpenSpec 上では、アプリ本体の実装はほぼ揃っています。
 - React 19
 - TypeScript
 - Supabase
-	- Auth
-	- Postgres
-	- Storage
+  - Auth
+  - Postgres
+  - Storage
 - Anthropic SDK
 - Stripe
 - sharp
@@ -146,17 +146,17 @@ E2E や live integration は外部サービスの準備が必要です。
 
 `.env.example` にある主な変数は次の通りです。
 
-| 変数 | 用途 |
-|---|---|
-| `NEXT_PUBLIC_SITE_URL` | サイトURL。OAuth / Stripe リダイレクトで使用 |
-| `ANTHROPIC_API_KEY` | LLM 解析用のサーバー側キー |
-| `NEXT_PUBLIC_SUPABASE_URL` | Supabase プロジェクトURL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase 公開キー |
-| `SUPABASE_SERVICE_ROLE_KEY` | サーバー側の管理操作用キー |
-| `STRIPE_SECRET_KEY` | Stripe API のサーバー側キー |
-| `STRIPE_WEBHOOK_SECRET` | Stripe Webhook 検証用シークレット |
-| `STRIPE_PRICE_ID_MONTHLY` | 月額プランの Price ID |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe 公開キー |
+| 変数                                 | 用途                                         |
+| ------------------------------------ | -------------------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`               | サイトURL。OAuth / Stripe リダイレクトで使用 |
+| `ANTHROPIC_API_KEY`                  | LLM 解析用のサーバー側キー                   |
+| `NEXT_PUBLIC_SUPABASE_URL`           | Supabase プロジェクトURL                     |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY`      | Supabase 公開キー                            |
+| `SUPABASE_SERVICE_ROLE_KEY`          | サーバー側の管理操作用キー                   |
+| `STRIPE_SECRET_KEY`                  | Stripe API のサーバー側キー                  |
+| `STRIPE_WEBHOOK_SECRET`              | Stripe Webhook 検証用シークレット            |
+| `STRIPE_PRICE_ID_MONTHLY`            | 月額プランの Price ID                        |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe 公開キー                              |
 
 注意:
 

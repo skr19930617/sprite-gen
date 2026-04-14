@@ -1,8 +1,11 @@
 # project-persistence Specification
 
 ## Purpose
+
 TBD - created by archiving change sprite-generator-mvp. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Project save artifacts
 
 The system SHALL persist the following artifacts per project to Supabase Storage: `source.png`, `mask.png`, `project.json`, `result.gif`, `spritesheet.png`. The system MUST NOT persist intermediate per-frame buffers or rendering caches.
@@ -71,4 +74,3 @@ The system SHALL allow open and view for any saved project, but MUST disable reg
 
 - **WHEN** a user opens a project where `renderer_version` ≠ current renderer version
 - **THEN** the regenerate button is disabled and a warning "このプロジェクトは互換性のないレンダラバージョンで作成されました — 読み取り専用です" is displayed
-

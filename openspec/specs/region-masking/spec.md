@@ -1,8 +1,11 @@
 # region-masking Specification
 
 ## Purpose
+
 TBD - created by archiving change sprite-generator-mvp. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Fixed region vocabulary
 
 The system SHALL use exactly four region labels: `body`, `tail`, `mouth`, `fin`. Each label MUST have a distinct color in the mask palette (default: `body=#FFFFFF`, `tail=#0000FF`, `mouth=#FF0000`, `fin=#00FF00`).
@@ -76,4 +79,3 @@ The system SHALL allow users to toggle an overlay of the source image beneath th
 
 - **WHEN** a user toggles the source overlay on
 - **THEN** the source image is rendered semi-transparently below the mask layers
-

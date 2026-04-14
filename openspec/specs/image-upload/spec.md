@@ -1,8 +1,11 @@
 # image-upload Specification
 
 ## Purpose
+
 TBD - created by archiving change sprite-generator-mvp. Update Purpose after archive.
+
 ## Requirements
+
 ### Requirement: Transparent PNG image upload
 
 The system SHALL accept a single transparent PNG image file as the source input for sprite generation. Non-transparent PNG (no alpha channel or fully opaque alpha), JPEG, and other formats MUST be rejected with a clear error message before any processing.
@@ -58,4 +61,3 @@ The system SHALL display a preview of the uploaded image on a checker-pattern ba
 
 - **WHEN** a user uploads a valid transparent PNG
 - **THEN** the preview area displays the image on a checker-pattern background
-
