@@ -1,0 +1,781 @@
+{
+  "feature_id": "sprite-gen-poc",
+  "phase": "design",
+  "current_round": 19,
+  "status": "in_progress",
+  "max_finding_id": 12,
+  "findings": [
+    {
+      "id": "R15-F01",
+      "severity": "high",
+      "category": "consistency",
+      "title": "Active draft contracts permit persisted loop state to diverge from the actual render",
+      "detail": "The design says `params.loop` is the authoritative value, but task 8.1 also allows `PATCH /projects/{id}/active-draft/renderer-config` to edit `loop`. Task 9.1 then persists `params` from `plan.json` and the render behavior from `renderer_config.json`, so a render can use one loop value while `project.json.animations[].params.loop` records another. The same draft model also conflicts on whether `llm_plan` stores the normalized resolved plan or the raw LLM output. Tighten this to one source of truth: store the normalized resolved plan everywhere, and either remove `loop` from renderer-config PATCH entirely or require any loop edit there to synchronize back into the plan draft before commit.",
+      "origin_round": 15,
+      "latest_round": 19,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R14-F01",
+      "notes": ""
+    },
+    {
+      "id": "R19-F01",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Add-another-animation routing contradicts the accepted annotation flow",
+      "detail": "The design and task 11.1.a establish one canonical rule: every successful llm-plan routes through the Annotation screen, using a skip-friendly mode when no required masks are missing. Task 11.2 then describes add-another-animation as navigating to Annotation only when missing_masks is non-empty. Those two instructions lead to different UI behavior and different implementation choices. Align task 11.2 with the always-visit-Annotation rule, or explicitly change the design if bypassing Annotation is intended.",
+      "origin_round": 19,
+      "latest_round": 19,
+      "status": "open",
+      "relation": "reframed",
+      "supersedes": "R15-F01",
+      "notes": ""
+    },
+    {
+      "id": "R19-F02",
+      "severity": "medium",
+      "category": "ordering",
+      "title": "Foundation task depends on endpoints scheduled much later",
+      "detail": "Task 1.1 is framed as project-store foundation work, but it also requires contract tests for POST /projects, GET /projects/{id}, and duplicate-save behavior that are only implemented in tasks 3.3 and 10.2. That makes the sequence non-actionable and forces foundation work to wait on later API features. Split 1.1 into filesystem/schema groundwork versus endpoint contract tests, and move the endpoint assertions next to the tasks that actually implement those routes.",
+      "origin_round": 19,
+      "latest_round": 19,
+      "status": "new",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R19-F03",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "Binary mask persistence is not actually enforced",
+      "detail": "The spec requires PoC mask files to be stored as grayscale PNGs using only 0 or 255 values, but the design/tasks only validate grayscale mode and source-sized dimensions for POST /projects/{id}/masks/{label}. They do not say whether intermediate gray values are rejected or thresholded before persistence. With downscaled editing and full-resolution save, non-binary values are a realistic outcome. Add an explicit server-side binarization or validation rule before writing mask files, and test that persisted masks contain only 0/255 pixel values.",
+      "origin_round": 19,
+      "latest_round": 19,
+      "status": "new",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R18-F01",
+      "severity": "medium",
+      "category": "risk",
+      "title": "ID/path validation is only specified for static asset routes",
+      "detail": "The tasks require slug validation for the static asset handlers, but the same filesystem-backed identifiers are used by project read, duplicate, delete, mask upload, draft, renderer-config, and render endpoints. The spec requires `project_id` and `animation_id` to be URL-safe slugs; without a shared validator on all of those routes, invalid IDs and path-resolution bugs are left to ad hoc handling. Add a common validation layer and endpoint tests for non-static routes, especially delete/duplicate/render paths.",
+      "origin_round": 18,
+      "latest_round": 18,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R18-F02",
+      "severity": "medium",
+      "category": "granularity",
+      "title": "The Input/plan-edit UI scope is still partly a note instead of an executable task",
+      "detail": "Task `11.1.b` says to \"Add a concrete sub-task\" for the Input-screen contract, but that sub-task is not actually present. That leaves required UI behavior under-specified in the task graph, including derived `duration_sec` display, the resolved-plan params editor, and the rule that `animation_type` is visible but not user-editable. Replace the meta note with explicit implementation and test tasks so the flow is actionable and reviewable.",
+      "origin_round": 18,
+      "latest_round": 18,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R17-F01",
+      "severity": "high",
+      "category": "consistency",
+      "title": "Renderer-config draft contract is self-contradictory",
+      "detail": "The active-draft API and data model for renderer config do not agree across sections. `Authoritative editable state` says `loop` is authoritative in `params` and `PATCH /active-draft/renderer-config` must reject `loop`, while `Active-draft slot details` says the same PATCH updates both `args` and `loop`. The API table also shows a smaller response shape for `POST /renderer-config`, while task 8.1 returns the persisted draft shape with server-added fields. This ambiguity affects server validation, UI form fields, re-render behavior, and loop propagation. Normalize the contract so there is one definitive editable field set and one definitive response shape.",
+      "origin_round": 17,
+      "latest_round": 17,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R17-F02",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Result-screen Save behavior is undefined and conflicts with the current persistence model",
+      "detail": "The design says Result-screen `Save` is only a confirmation action because masks and successful renders are already persisted, but task 11.1.b says the Save button 'finalizes the active draft if one exists'. Those are materially different behaviors, and the latter introduces a new commit path that is not defined anywhere else and does not fit the spec's config-edit-then-render flow. Define one behavior and update the tasks accordingly; the safer interpretation is to keep Save as a post-render confirmation/indicator only, not a separate draft-finalization mechanism.",
+      "origin_round": 17,
+      "latest_round": 17,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R16-F01",
+      "severity": "low",
+      "category": "completeness",
+      "title": "Renderer-config overwrite behavior is missing the required warning log",
+      "detail": "The spec requires the server to overwrite divergent LLM-returned `fps`/`frames`/`output_width`/`output_height` values with the user input and log a warning containing both values (explicitly called out for `fps`). The design and tasks cover the overwrite and mismatch tests, but they never require the warning log. Add the logging contract and a test assertion for it in the renderer-config work.",
+      "origin_round": 16,
+      "latest_round": 16,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R15-F02",
+      "notes": ""
+    },
+    {
+      "id": "R16-F02",
+      "severity": "medium",
+      "category": "granularity",
+      "title": "The main UX flow task is too large and contradicts itself on annotation routing",
+      "detail": "Task 11.1 bundles screen wiring, sub-mode mapping, save behavior, validation display, and annotation routing into one work item, and it gives conflicting rules: it says the Annotation screen is reached only when `missing_masks` is non-empty, but later says every subsequent animation still routes through Annotation even when `missing_masks` is empty in skip-friendly mode. That ambiguity affects navigation, test coverage, and whether the human-in-the-loop annotation step from the proposal is always preserved. Split this into smaller tasks and define one explicit rule for when Annotation is entered versus bypassed.",
+      "origin_round": 16,
+      "latest_round": 16,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R15-F02",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "The flow skips annotation too aggressively for subsequent animations",
+      "detail": "State/Lifecycle and task 11.1 route any later prompt directly to renderer-config when `missing_masks` is empty. That removes the user's chance to refine existing masks or add optional regions for the new animation, even though the proposal/spec position human annotation as part of the prompt-to-render loop and the Annotation screen is supposed to show required and optional regions. Keep mask reuse as an optimization, but allow every resolved plan to enter Annotation with the current masks preloaded and an explicit continue/skip path when no required masks are missing.",
+      "origin_round": 15,
+      "latest_round": 16,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R14-F02",
+      "notes": ""
+    },
+    {
+      "id": "R15-F03",
+      "severity": "medium",
+      "category": "risk",
+      "title": "Unsupported animation types fail late and the expected error contract is inconsistent",
+      "detail": "The design accepts `turn` and `approach_food` at plan time but only rejects them at `/renderer-config`, after the user may already have edited params and masks. In addition, the design's Completion Conditions expect `unknown_renderer_template`, while the Contracts/Interfaces section and tasks use `unsupported_animation_type_for_poc`. Decide one behavior and one error contract, and surface the non-renderable state immediately after plan resolution or otherwise before annotation so unsupported-but-schema-valid plans do not send users into avoidable rework.",
+      "origin_round": 15,
+      "latest_round": 15,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R14-F01",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "The design gives conflicting answers for key workflow contracts",
+      "detail": "Two core behaviors are still contradictory across sections: `Re-generate` is specified both as in-place overwrite of the same `animation_id` and as appending a new animation entry, and plan-stage `animation_type` handling is specified both as accepting all four enum values and as rejecting anything except `swim_slow`/`eat`. The tasks mostly follow one interpretation, but the design is not single-source-of-truth, so implementation and test work can easily diverge. Remove the contradictory text and align every section and task with one authoritative contract for both behaviors.",
+      "origin_round": 14,
+      "latest_round": 15,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R11-F01",
+      "notes": ""
+    },
+    {
+      "id": "R14-F02",
+      "severity": "high",
+      "category": "completeness",
+      "title": "Renderer-config flow does not enforce plan-to-template compatibility",
+      "detail": "The design/tasks only validate that `renderer_template` exists in the registry, but they never require it to match the persisted `llm_plan.animation_type`. That means an unsupported plan such as `turn` could still be accepted if the LLM returns a known template like `fish_swim_slow_v1`, and even supported plans could render the wrong motion if the LLM picks the wrong known template. Add an explicit server-side mapping from `animation_type` to allowed template ids, and return a deterministic 422/unsupported-animation error whenever the plan's type has no implemented template or the returned template does not match the plan.",
+      "origin_round": 14,
+      "latest_round": 15,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R11-F01",
+      "severity": "high",
+      "category": "consistency",
+      "title": "Renderer-config draft contract is internally inconsistent",
+      "detail": "The second-pass config contract is not stable across the design and tasks. The design describes the LLM as returning `renderer_template + args + loop`, but the spec's accepted LLM schema is only `{renderer_template, args}` and `loop` must come from `params.loop`. Separately, task 8.1 writes `_drafts/active/renderer_config.json` without `plan_token`, while task 9.1 requires that token to reject stale configs. This leaves implementers with two incompatible draft shapes and breaks the stale-renderer-config safeguard. Define one contract: validate the LLM response as `{renderer_template, args}` only, then have the server append `loop` and `plan_token` when persisting the renderer-config draft, and update tasks 8.1/9.1 and the API documentation to match.",
+      "origin_round": 11,
+      "latest_round": 14,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R7-F01",
+      "notes": ""
+    },
+    {
+      "id": "R13-F01",
+      "severity": "high",
+      "category": "feasibility",
+      "title": "Re-generate flow is internally contradictory and the overwrite strategy is not implementable as written",
+      "detail": "The design alternates between two incompatible semantics for Re-generate: 'overwrite the existing animation in place' (Contracts / Interfaces > Re-generate semantics, task 11.2) versus 'seed a draft and append a new animation entry' (Re-generate draft seed, Integration Points, Open Questions). On top of that, the overwrite path relies on atomically renaming `animations/.tmp/<animation_id>/` over an existing non-empty `animations/<animation_id>/` directory, which will not work as described on POSIX filesystems. Pick one Re-generate semantic, remove the contradictory sections, and specify a viable persistence swap strategy for the chosen behavior (for example file-level `os.replace` within the existing directory, or a documented backup-and-replace sequence with rollback/recovery).",
+      "origin_round": 13,
+      "latest_round": 13,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R7-F02",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "Second-pass LLM input is missing the required `mask_labels_present` field",
+      "detail": "The `llm-renderer-config` spec requires the second Claude invocation to receive `{source_image_path, mask_dir, output_size, fps, frame_count, prompt, llm_plan, mask_labels_present}`. The design and task 8.x validate masks server-side, but they never explicitly compute and pass `mask_labels_present` into the LLM prompt. That leaves the renderer-config contract under-specified and risks different model behavior than the spec assumes. Define `mask_labels_present` as a derived input from `mask_has_content`, include it in the CLI payload, and cover it in tests.",
+      "origin_round": 7,
+      "latest_round": 12,
+      "status": "resolved",
+      "relation": "same",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R12-F01",
+      "severity": "medium",
+      "category": "scope",
+      "title": "Re-generate is expanded into a new-entry history flow that the spec does not require",
+      "detail": "The design/tasks redefine Result-screen `Re-generate` as `seed-from` plus creation of a brand-new `animations[]` entry with a fresh `animation_id`. The spec clearly uses append semantics for `Add another animation`, but describes `Re-generate` as rerunning render with current args. This adds API surface and versioning behavior that is not reconciled with the spec or with how users distinguish a rerender from a distinct animation. Either simplify `Re-generate` to rerender/update the selected animation in place, or explicitly align the contract and tasks so regeneration-as-new-entry is intentional rather than accidental scope growth.",
+      "origin_round": 12,
+      "latest_round": 12,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R11-F02",
+      "severity": "medium",
+      "category": "ordering",
+      "title": "Re-generate work is sequenced after a task that already depends on it",
+      "detail": "Task 10.3 asks for reopened-project UI including re-generate seeding from prior args, but the actual seed-from API and re-generate flow are only implemented in task 11.2. That reverses the dependency and creates overlap between the two tasks. Either move the seed-from backend/frontend work into task 10, or make task 10.3 strictly about library/open/history UI and put all re-generate behavior under 11.2 with an explicit dependency.",
+      "origin_round": 11,
+      "latest_round": 11,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R11-F03",
+      "severity": "medium",
+      "category": "feasibility",
+      "title": "Atomic render commit is underspecified for cross-filesystem temp directories",
+      "detail": "The design relies on `temp dir -> atomic rename` to keep projects uncorrupted, but it never constrains where that temp directory lives. If rendering stages files under `/tmp` or another filesystem, the final rename into `projects/<project_id>/animations/` may not be atomic or may fail outright. Specify that staging happens under a sibling directory within the project tree, such as `projects/<project_id>/animations/.tmp/`, so the rename guarantee actually holds.",
+      "origin_round": 11,
+      "latest_round": 11,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R7-F01",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Mask filter timing does not match the annotation UI requirement",
+      "detail": "The spec says clip-to-source, hole-fill, and isolated-pixel-removal are applied after every edit in the annotation UI for `tail`, `mouth`, and `fin`. The design and tasks move those filters to server-side persistence only. If implemented as written, the canvas can display a mask state that later changes on save, which diverges from the required UI behavior. Either apply the same filters client-side after each edit or make each edit round-trip through persistence and refresh the filtered result immediately.",
+      "origin_round": 7,
+      "latest_round": 11,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R6-F01",
+      "notes": ""
+    },
+    {
+      "id": "R10-F01",
+      "severity": "high",
+      "category": "risk",
+      "title": "Active draft lifecycle does not invalidate stale renderer_config state",
+      "detail": "The design lets a new llm-plan overwrite plan.json, but it never explicitly clears or invalidates an existing _drafts/active/renderer_config.json from a previous prompt/config cycle. That leaves a real path where reload/resume exposes has_renderer_config=true for the wrong prompt, or POST /projects/{id}/animations renders with a stale template/args pair that no longer matches the current plan. Define and task the invalidation rule: whenever a new llm-plan succeeds, clear renderer_config.json; also specify whether later params edits invalidate an existing renderer config.",
+      "origin_round": 10,
+      "latest_round": 10,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R9-F01",
+      "severity": "high",
+      "category": "completeness",
+      "title": "Unknown renderer templates are only rejected at render time",
+      "detail": "The design and tasks validate numeric args in `POST /projects/{id}/renderer-config`, but they do not validate `renderer_template` against the fixed template set there. Task 9.2 only checks unknown-template rejection during `POST /projects/{id}/animations`. That violates the `llm-renderer-config` contract, which says the accepted config schema must reference a known template. As written, the system can persist an unusable `_drafts/active/renderer_config.json` and send the UI into an args-edit step it cannot recover from. Add explicit template-id validation to the renderer-config endpoint and corresponding negative tests at that stage.",
+      "origin_round": 9,
+      "latest_round": 9,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R7-F03",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Verification still refers to the removed top-level `mask_labels_present` field",
+      "detail": "The design correctly standardizes persisted animation entries on `annotation.labels_present`, but the Completion Conditions section and task 12.1 still say to verify `mask_labels_present` 'per v3 schema'. The v3 schema explicitly does not contain that top-level field. Update the completion criteria and E2E assertions to check `annotation.labels_present` instead, or the verification plan will test the wrong data model.",
+      "origin_round": 7,
+      "latest_round": 8,
+      "status": "resolved",
+      "relation": "same",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R6-F02",
+      "severity": "high",
+      "category": "completeness",
+      "title": "Draft plan/config persistence is missing even though the specs require persisted active state before render",
+      "detail": "`llm-plan-analysis` requires the accepted plan to be persisted as the active animation's `llm_plan`, and user-edited params must be persisted before annotation. `llm-renderer-config` likewise requires an accepted renderer config to be persisted as `animations/<animation_id>/renderer_config.json`. The design instead keeps both `plan_resolved` and `config_draft` in memory only until final render success. That loses state on refresh/restart and does not satisfy the spec's persistence semantics. Add an explicit persisted draft-state model and corresponding tasks, or revise the spec first; without that, the workflow is not implementation-ready.",
+      "origin_round": 6,
+      "latest_round": 7,
+      "status": "resolved",
+      "relation": "same",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R6-F01",
+      "severity": "high",
+      "category": "consistency",
+      "title": "The persisted project schema in the design/tasks does not match the v3 contract",
+      "detail": "The design and tasks repeatedly treat animation entries as storing top-level `mask_labels_present` and draft `renderer_config` details, but the spec's canonical `project.json` v3 shape requires `annotation.labels_present`, `renderer_config_path`, `outputs.{gif_path,spritesheet_path}`, and `renderer_version`. Task 9.1 also claims the proposed fields already satisfy v3, which is incorrect. In the same area, the duplicate-save design says the new project should not create an `animations/` directory, but the project layout contract requires that directory to exist for every project. Align the persisted schema, duplicate layout, hydration logic, and related tasks to the exact v3 structure before implementation.",
+      "origin_round": 6,
+      "latest_round": 7,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": "R1-F04",
+      "notes": ""
+    },
+    {
+      "id": "R6-F03",
+      "severity": "medium",
+      "category": "risk",
+      "title": "Mask presence is defined by file existence instead of actual labeled pixels",
+      "detail": "The design/tasks derive `missing_masks` and `mask_labels_present` from whether `mask/<label>.png` exists on disk. That is not a safe proxy for 'label present': a user can leave an all-black mask file after edits, or a previously created file can remain even though the required region has no pixels. This can incorrectly skip annotation, mislead the second LLM call, and let rendering proceed with effectively missing required masks. Define presence as 'mask contains at least one non-zero pixel after filters', and add validation/tasks to recompute presence from contents rather than filenames.",
+      "origin_round": 6,
+      "latest_round": 6,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R1-F04",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Resolved-plan handling is under-specified",
+      "detail": "The first-pass LLM flow is described mainly as strict schema validation, but the spec also requires server-side defaulting of missing/null `params`, rejection of multi-animation `animations[]` outputs, persistence of user-edited resolved params before annotation, and later honoring `params.loop` during GIF export. The current tasks do not define a resolved-plan state or a path for `loop` to reach the renderer/export layer, since the renderer contract only accepts `args`. Add explicit design/task coverage for plan normalization, single-animation enforcement, param persistence, and loop propagation into rendering.",
+      "origin_round": 1,
+      "latest_round": 6,
+      "status": "resolved",
+      "relation": "reframed",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R4-F11",
+      "severity": "high",
+      "category": "consistency",
+      "file": "tasks.md",
+      "title": "The render-persistence contract cannot produce schema-complete animation entries",
+      "detail": "The v3 project.json schema requires each animation entry to include the original prompt and annotation.labels_present, but POST /projects/{id}/animations only carries renderer_config, llm_plan, and params, and task 9.1 only calls out persisting llm_plan/params plus renderer_config.json. Because the design also makes plan/config draft state memory-only, there is no defined source of truth for writing the required prompt and mask-label snapshot on successful render. Extend the persistence contract and task coverage so completed animation entries conform to the full schema.",
+      "origin_round": 4,
+      "latest_round": 4,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R5-F12",
+      "severity": "medium",
+      "category": "ordering",
+      "file": "design.md",
+      "title": "The initial runtime flow still reverses plan resolution and annotation",
+      "detail": "The `State / Lifecycle` section still shows `[draft] -> edit masks -> annotated -> LLM plan`, but the spec's annotation screen depends on the resolved plan's required/optional regions and on the params-edit step happening first. Tasks 11.1/11.2 only spell out the corrected order for later flows, leaving the initial `Start` path ambiguous. Update the lifecycle and task coverage so the first animation path is explicitly `upload -> llm-plan -> params edit -> annotation -> renderer-config -> args edit -> render`.",
+      "origin_round": 5,
+      "latest_round": 5,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R1-F01",
+      "severity": "medium",
+      "category": "consistency",
+      "title": "Animation generation flow skips the required editable renderer-config step",
+      "detail": "The design/API makes `POST /projects/{id}/animations` perform the second LLM call and the render in one request, and task 10.2 further defines `Re-generate` as appending a new animation entry. That leaves no point where the UI can show the resolved `args` and let the user edit them before the first render, which `llm-renderer-config` explicitly requires. It also blurs the spec’s distinction between `Re-generate` and `Add another animation`. Split config resolution from final render, or otherwise persist a draft renderer config that the UI can edit before rendering, and clarify that only the add-another-animation path appends a new animation entry.",
+      "origin_round": 1,
+      "latest_round": 1,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 5
+    },
+    {
+      "id": "R1-F02",
+      "severity": "high",
+      "category": "completeness",
+      "title": "Mask editor tasks omit required body editing and cleanup behavior",
+      "detail": "Task 4 scopes annotation to tail/mouth/fin and does not explicitly cover manual `body` refinement, the required tool set (`pen`, `eraser`, `bucket fill`, `zoom`, `undo`, `label switch` across all four labels), or the required post-edit filters (`clip-to-source`, `hole-fill`, `isolated-pixel-removal`). The spec requires all of these, and body editing is necessary for RGB/grayscale uploads whose auto-initialized `body.png` can be fully opaque. Expand the design and task breakdown so the editor contract covers all four labels, required tools, filter application timing, and persistence semantics.",
+      "origin_round": 1,
+      "latest_round": 1,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 2
+    },
+    {
+      "id": "R1-F03",
+      "severity": "medium",
+      "category": "completeness",
+      "title": "Image intake plan does not explicitly cover required RGB/grayscale normalization",
+      "detail": "The intake tasks focus on validation and rejection paths, but the spec requires RGB and grayscale PNGs to be accepted and converted server-side to RGBA before persistence. As written, tasks 3.1-3.3 can be completed while still rejecting valid non-RGBA PNGs, and there is no explicit test for the fully opaque converted-source case. Add explicit implementation and test steps for RGB/grayscale-to-RGBA conversion and the resulting `body.png` initialization behavior.",
+      "origin_round": 1,
+      "latest_round": 1,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 2
+    },
+    {
+      "id": "R2-F05",
+      "severity": "low",
+      "category": "consistency",
+      "file": "design.md",
+      "title": "Result screen drops the required Save action",
+      "detail": "The design explicitly says an explicit Save button is unnecessary because the project is always saved, and the task list therefore never implements it. The local-app-shell spec still requires the Result screen to expose Save alongside Re-generate and Add another animation, so the design/tasks need to restore that action or define a spec-compliant save interaction instead of removing it.",
+      "origin_round": 2,
+      "latest_round": 2,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 3
+    },
+    {
+      "id": "R3-F06",
+      "severity": "high",
+      "category": "completeness",
+      "file": "design.md",
+      "title": "Project reload contract cannot reconstruct result-screen animation details",
+      "detail": "`GET /projects/{id}` is defined only at a summary level, while the v3 schema stores renderer config in `animations/<animation_id>/renderer_config.json` rather than inline in `project.json`. The reopened Result screen must show resolved `params`, `args`, `renderer_template`, previews, and seed Re-generate with the prior args, but the design/tasks never define hydrating renderer-config data into the reload response or exposing an equivalent per-animation detail read. Add a concrete read contract so reopened projects can restore full animation detail.",
+      "origin_round": 3,
+      "latest_round": 3,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 4
+    },
+    {
+      "id": "R3-F07",
+      "severity": "medium",
+      "category": "consistency",
+      "file": "tasks.md",
+      "title": "Mask filter task still applies body-forbidden cleanup implicitly",
+      "detail": "Task 4.1 applies clip-to-source, hole-fill, and isolated-pixel-removal generically when persisting label PNGs. The spec explicitly limits those filters to `tail`, `mouth`, and `fin`, and says they must not modify `body`. Without an explicit body exemption, body refinements can be silently altered. Make the per-label branching explicit and add coverage that edited body masks round-trip without those cleanup passes.",
+      "origin_round": 3,
+      "latest_round": 3,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 4
+    },
+    {
+      "id": "R3-F08",
+      "severity": "medium",
+      "category": "completeness",
+      "file": "tasks.md",
+      "title": "Duplicate-save task does not require clearing animation history",
+      "detail": "Task 10.2 describes duplicate-save as a filesystem copy with a new project ID, but it never says to remove copied `animations/` artifacts or rewrite `project.json.animations` to `[]`. A literal copy would violate the spec, which requires duplicate-save to preserve only `source.png` and `mask/*.png` while starting with no animations. Expand the task/design to explicitly reset animation artifacts, IDs, and timestamps.",
+      "origin_round": 3,
+      "latest_round": 3,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 4
+    },
+    {
+      "id": "R4-F09",
+      "severity": "high",
+      "category": "completeness",
+      "file": "design.md",
+      "title": "The runtime flow has no supported way to add newly required masks for later animations",
+      "detail": "The shared-mask model means a later prompt can require labels that were never annotated on the first pass, such as generating swim_slow first and eat second when mouth was never drawn. But the State/Lifecycle section places mask editing before llm-plan, and task 11.2 sends Add another animation straight from llm-plan to renderer-config with only server-side missing-mask validation. That turns valid multi-animation flows into 422 dead ends with no path back to annotation. The design and tasks need an explicit post-plan annotation branch so missing required labels can be added or refined before renderer-config runs.",
+      "origin_round": 4,
+      "latest_round": 4,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 5
+    },
+    {
+      "id": "R4-F10",
+      "severity": "medium",
+      "category": "completeness",
+      "file": "design.md",
+      "title": "Valid `turn` and `approach_food` plans are accepted without any defined PoC handling",
+      "detail": "The llm-plan contract still accepts all four animation types, but the renderer/tasks only implement swim_slow and eat. The design never states whether turn and approach_food should be rejected immediately with a user-visible 'not supported in this PoC' error or handled some other way. As written, a schema-valid first-pass plan can proceed into a flow that has no renderable outcome. Add an explicit gate for unimplemented animation types before annotation/rendering, or otherwise align the accepted plan contract with the implemented subset.",
+      "origin_round": 4,
+      "latest_round": 4,
+      "status": "resolved",
+      "relation": "new",
+      "supersedes": null,
+      "notes": "",
+      "resolved_round": 5
+    }
+  ],
+  "round_summaries": [
+    {
+      "round": 1,
+      "total": 4,
+      "open": 4,
+      "new": 4,
+      "resolved": 0,
+      "overridden": 0,
+      "by_severity": {
+        "high": 2,
+        "medium": 2
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-1"
+    },
+    {
+      "round": 2,
+      "total": 5,
+      "open": 3,
+      "new": 1,
+      "resolved": 2,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 1,
+        "high": 1,
+        "low": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-2"
+    },
+    {
+      "round": 3,
+      "total": 8,
+      "open": 5,
+      "new": 3,
+      "resolved": 3,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 4,
+        "high": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-3"
+    },
+    {
+      "round": 4,
+      "total": 11,
+      "open": 5,
+      "new": 3,
+      "resolved": 6,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 3,
+        "high": 2
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-4"
+    },
+    {
+      "round": 5,
+      "total": 12,
+      "open": 3,
+      "new": 1,
+      "resolved": 9,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 2,
+        "high": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-5"
+    },
+    {
+      "round": 6,
+      "total": 15,
+      "open": 3,
+      "new": 2,
+      "resolved": 12,
+      "overridden": 0,
+      "by_severity": {
+        "high": 2,
+        "medium": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-6"
+    },
+    {
+      "round": 7,
+      "total": 18,
+      "open": 4,
+      "new": 2,
+      "resolved": 14,
+      "overridden": 0,
+      "by_severity": {
+        "high": 1,
+        "medium": 3
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-7"
+    },
+    {
+      "round": 8,
+      "total": 18,
+      "open": 3,
+      "new": 0,
+      "resolved": 15,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 3
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-8"
+    },
+    {
+      "round": 9,
+      "total": 19,
+      "open": 3,
+      "new": 1,
+      "resolved": 16,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 2,
+        "high": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-9"
+    },
+    {
+      "round": 10,
+      "total": 20,
+      "open": 3,
+      "new": 1,
+      "resolved": 17,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 2,
+        "high": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-10"
+    },
+    {
+      "round": 11,
+      "total": 23,
+      "open": 4,
+      "new": 2,
+      "resolved": 19,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 3,
+        "high": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-11"
+    },
+    {
+      "round": 12,
+      "total": 24,
+      "open": 3,
+      "new": 1,
+      "resolved": 21,
+      "overridden": 0,
+      "by_severity": {
+        "high": 1,
+        "medium": 2
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-12"
+    },
+    {
+      "round": 13,
+      "total": 25,
+      "open": 2,
+      "new": 1,
+      "resolved": 23,
+      "overridden": 0,
+      "by_severity": {
+        "high": 2
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-13"
+    },
+    {
+      "round": 14,
+      "total": 27,
+      "open": 2,
+      "new": 1,
+      "resolved": 25,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 1,
+        "high": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-14"
+    },
+    {
+      "round": 15,
+      "total": 30,
+      "open": 3,
+      "new": 1,
+      "resolved": 27,
+      "overridden": 0,
+      "by_severity": {
+        "high": 1,
+        "medium": 2
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-15"
+    },
+    {
+      "round": 16,
+      "total": 32,
+      "open": 3,
+      "new": 1,
+      "resolved": 29,
+      "overridden": 0,
+      "by_severity": {
+        "high": 1,
+        "low": 1,
+        "medium": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-16"
+    },
+    {
+      "round": 17,
+      "total": 34,
+      "open": 3,
+      "new": 2,
+      "resolved": 31,
+      "overridden": 0,
+      "by_severity": {
+        "high": 2,
+        "medium": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-17"
+    },
+    {
+      "round": 18,
+      "total": 36,
+      "open": 3,
+      "new": 2,
+      "resolved": 33,
+      "overridden": 0,
+      "by_severity": {
+        "high": 1,
+        "medium": 2
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-18"
+    },
+    {
+      "round": 19,
+      "total": 39,
+      "open": 3,
+      "new": 2,
+      "resolved": 36,
+      "overridden": 0,
+      "by_severity": {
+        "medium": 3
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-design_review-19"
+    }
+  ]
+}

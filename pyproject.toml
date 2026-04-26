@@ -1,0 +1,39 @@
+[project]
+name = "sprite-gen"
+version = "0.1.0"
+description = "Local PoC sprite animation generator (transparent PNG + natural language + masks + LLM)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "pillow>=10.2",
+    "numpy>=1.26",
+    "imageio>=2.34",
+    "python-multipart>=0.0.9",
+    "ulid-py>=1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
+    "ruff>=0.3",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sprite_gen*"]
+exclude = ["tests*", "ui*", "projects*", "openspec*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

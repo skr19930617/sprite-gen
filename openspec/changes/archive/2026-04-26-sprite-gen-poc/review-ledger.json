@@ -1,0 +1,52 @@
+{
+  "feature_id": "sprite-gen-poc",
+  "phase": "impl",
+  "current_round": 1,
+  "status": "has_open_high",
+  "max_finding_id": 2,
+  "findings": [
+    {
+      "id": "R1-F01",
+      "severity": "high",
+      "category": "completeness",
+      "file": "README.md",
+      "title": "Reviewed change set is documentation-only and does not implement the PoC spec",
+      "detail": "The tracked diff only changes `README.md`, so none of the required deliverables in the spec are actually part of this patch: FastAPI endpoints, React/Vite UI, mask annotation flow, Claude CLI integration, `swim_slow`/`eat` renderer templates, project persistence, failure recovery, or the required test coverage. A spec that introduces seven new capabilities and explicit acceptance criteria cannot be considered implemented by a README-only diff. Include the actual implementation and tests in the reviewed change set, or narrow the scope so the patch matches what is landing.",
+      "origin_round": 1,
+      "latest_round": 1,
+      "status": "new",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    },
+    {
+      "id": "R1-F02",
+      "severity": "medium",
+      "category": "correctness",
+      "file": "README.md",
+      "title": "README claims spec compliance using the wrong spec path",
+      "detail": "The new `Spec compliance` section says capabilities live under `openspec/specs/<capability>/spec.md`, but this PoC’s specs are under `openspec/changes/sprite-gen-poc/specs/...`. That makes the documentation inaccurate, and combined with the missing implementation it overstates the state of the branch. Point to the actual spec location and avoid claiming compliance until the code is included in the diff.",
+      "origin_round": 1,
+      "latest_round": 1,
+      "status": "new",
+      "relation": "new",
+      "supersedes": null,
+      "notes": ""
+    }
+  ],
+  "round_summaries": [
+    {
+      "round": 1,
+      "total": 2,
+      "open": 2,
+      "new": 2,
+      "resolved": 0,
+      "overridden": 0,
+      "by_severity": {
+        "high": 1,
+        "medium": 1
+      },
+      "gate_id": "review_decision-sprite-gen-poc-1-apply_review-1"
+    }
+  ]
+}

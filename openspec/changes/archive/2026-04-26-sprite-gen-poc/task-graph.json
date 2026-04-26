@@ -1,0 +1,703 @@
+{
+  "version": "1.0",
+  "change_id": "sprite-gen-poc",
+  "bundles": [
+    {
+      "id": "repo-shell-bootstrap",
+      "title": "Bootstrap Local App Shell",
+      "goal": "Create the baseline FastAPI and React/Vite application shell, local-only dev wiring, and repo hygiene needed for all later work.",
+      "depends_on": [],
+      "inputs": [
+        "design.md#Contracts / Interfaces",
+        "design.md#Decisions",
+        "design.md#Ordering / Dependency Notes"
+      ],
+      "outputs": [
+        "server/app.py",
+        "client/package.json",
+        "client/src/main.tsx",
+        ".gitignore",
+        "scripts/dev-start.sh"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Scaffold the FastAPI app with localhost binding, CORS policy, and placeholder route registration",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Scaffold the React + Vite TypeScript client entrypoint and shared API bootstrap",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Add local development startup wiring for server and client",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Ignore runtime project artifacts and other generated local state in git",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "local-app-shell"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "test-harness-and-fixtures",
+      "title": "Set Up Fixtures And Test Harness",
+      "goal": "Establish reusable fixtures and automated test harnesses for backend integration, renderer golden tests, and browser E2E flows.",
+      "depends_on": [
+        "repo-shell-bootstrap"
+      ],
+      "inputs": [
+        "design.md#Completion Conditions",
+        "design.md#Risks / Trade-offs",
+        "design.md#Concerns"
+      ],
+      "outputs": [
+        "tests/fixtures/images/",
+        "tests/fixtures/claude/mock_claude.py",
+        "tests/golden/",
+        "tests/e2e/",
+        "pytest.ini"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Create fixture source PNGs, mask samples, and output-setting samples for repeatable tests",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Create a mock Claude CLI script that can emit success and failure variants for both LLM stages",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Configure backend integration, renderer golden, and browser E2E test runners around the shared fixtures",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "local-app-shell",
+        "llm-plan-analysis",
+        "llm-renderer-config",
+        "template-renderer"
+      ],
+      "size_score": 3
+    },
+    {
+      "id": "project-store-core",
+      "title": "Implement Project Store Core",
+      "goal": "Provide the filesystem-backed project layout, draft-slot helpers, mask presence utilities, and static asset serving contract.",
+      "depends_on": [
+        "repo-shell-bootstrap"
+      ],
+      "inputs": [
+        "design.md#Canonical state",
+        "design.md#Persistence / Ownership",
+        "design.md#Static-asset serving"
+      ],
+      "outputs": [
+        "server/project_store.py",
+        "server/draft_store.py",
+        "server/mask_presence.py",
+        "server/static_assets.py",
+        "projects/<project_id>/project.json"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement project directory creation and v3 project.json read/write helpers",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Implement active-draft storage helpers, plan-token checks, and draft cleanup primitives",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Implement shared content-based mask presence utilities for missing-mask and labels-present checks",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Implement read-only static asset handlers and startup cleanup for stale staging and backup directories",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "project-store",
+        "local-app-shell"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "image-input-intake",
+      "title": "Build Image Input Intake",
+      "goal": "Accept project creation uploads, validate output settings, convert supported PNG modes to RGBA, and persist the initial source plus body mask.",
+      "depends_on": [
+        "repo-shell-bootstrap",
+        "test-harness-and-fixtures",
+        "project-store-core"
+      ],
+      "inputs": [
+        "design.md#HTTP API",
+        "design.md#PNG color mode handling",
+        "server/project_store.py"
+      ],
+      "outputs": [
+        "server/routes/projects_create.py",
+        "projects/<project_id>/source.png",
+        "projects/<project_id>/mask/body.png",
+        "tests/integration/test_projects_create.py"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement multipart POST /projects parsing and output-setting validation",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Implement PNG mode acceptance, RGBA conversion, and unsupported-mode rejection",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Persist source.png and auto-initialize body.png according to alpha and conversion rules",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add integration coverage for valid uploads, invalid files, size limits, and range validation",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "image-input-intake",
+        "project-store"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "mask-annotation-flow",
+      "title": "Implement Mask Annotation Flow",
+      "goal": "Enable four-label mask editing with server-side cleanup filters, immediate persistence, and browser-based annotation UX.",
+      "depends_on": [
+        "repo-shell-bootstrap",
+        "test-harness-and-fixtures",
+        "project-store-core",
+        "image-input-intake"
+      ],
+      "inputs": [
+        "design.md#Mask editor contract",
+        "design.md#Mask 永続化フォーマット",
+        "server/mask_presence.py",
+        "tests/fixtures/images/"
+      ],
+      "outputs": [
+        "server/routes/masks.py",
+        "server/mask_filters.py",
+        "client/src/features/mask-editor/",
+        "tests/e2e/mask-annotation.spec.ts"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement POST /projects/{id}/masks/{label} with mode and dimension validation plus per-label filter behavior",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Build the canvas editor with pen, eraser, bucket fill, zoom, undo, and label switching across body, tail, mouth, and fin",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Reload server-filtered masks into the canvas after debounced saves and expose derived-body and save-status feedback",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add browser E2E coverage for four-label annotation and filter round-trips",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "mask-annotation-ui",
+        "project-store"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "llm-plan-draft",
+      "title": "Implement LLM Plan Draft Flow",
+      "goal": "Run the first LLM call, normalize and validate the plan, persist the active plan draft, and support params editing with stale-config invalidation.",
+      "depends_on": [
+        "repo-shell-bootstrap",
+        "test-harness-and-fixtures",
+        "project-store-core",
+        "image-input-intake"
+      ],
+      "inputs": [
+        "design.md#Server ↔ LLM CLI",
+        "design.md#LLM plan normalization",
+        "server/draft_store.py",
+        "server/mask_presence.py",
+        "tests/fixtures/claude/mock_claude.py"
+      ],
+      "outputs": [
+        "server/llm/claude_client.py",
+        "server/routes/llm_plan.py",
+        "projects/<project_id>/_drafts/active/plan.json",
+        "tests/integration/test_llm_plan.py"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement the Claude subprocess wrapper with JSON extraction, timeout handling, and auth or exit-code error mapping",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Validate and normalize llm-plan responses including single-animation enforcement, param defaults, and unsupported PoC type gating",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Persist the active plan draft, compute missing_masks from content-based mask checks, and support PATCH params updates with renderer-config invalidation",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add integration tests for valid plans, invalid plans, missing masks, and draft persistence behavior",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "llm-plan-analysis",
+        "project-store"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "renderer-core-swim",
+      "title": "Build Renderer Core And Swim Template",
+      "goal": "Create the in-process renderer package, shared export pipeline, and deterministic swim_slow template implementation.",
+      "depends_on": [
+        "repo-shell-bootstrap",
+        "test-harness-and-fixtures"
+      ],
+      "inputs": [
+        "design.md#Server ↔ Renderer",
+        "design.md#Renderer 内部",
+        "tests/fixtures/images/"
+      ],
+      "outputs": [
+        "sprite_gen/renderer/core.py",
+        "sprite_gen/renderer/export.py",
+        "sprite_gen/renderer/templates/fish_swim_slow_v1.py",
+        "tests/golden/test_swim_slow.py"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Create the renderer core, template interface, and common GIF or spritesheet export helpers",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Implement fish_swim_slow_v1 with deterministic frame generation and args handling",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Add golden tests for swim_slow output stability and shared export behavior",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "template-renderer"
+      ],
+      "size_score": 3
+    },
+    {
+      "id": "renderer-eat-template",
+      "title": "Add Eat Template Support",
+      "goal": "Extend the renderer with the eat template so the PoC supports the second required animation type.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "renderer-core-swim"
+      ],
+      "inputs": [
+        "design.md#必須 animation_type",
+        "sprite_gen/renderer/templates/fish_swim_slow_v1.py",
+        "tests/fixtures/images/"
+      ],
+      "outputs": [
+        "sprite_gen/renderer/templates/fish_eat_v1.py",
+        "sprite_gen/renderer/template_registry.py",
+        "tests/golden/test_eat.py"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement fish_eat_v1 on the shared renderer core",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Register both supported templates and enforce deterministic template lookup",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Add golden coverage for eat output, mask interactions, and loop-sensitive export behavior",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "template-renderer"
+      ],
+      "size_score": 3
+    },
+    {
+      "id": "llm-renderer-config-draft",
+      "title": "Implement Renderer Config Draft Flow",
+      "goal": "Run the second LLM call, validate template and args compatibility, persist renderer-config drafts, and expose args editing.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "project-store-core",
+        "llm-plan-draft",
+        "renderer-core-swim",
+        "renderer-eat-template"
+      ],
+      "inputs": [
+        "design.md#POST /projects/{id}/renderer-config",
+        "design.md#Authoritative editable state",
+        "server/llm/claude_client.py",
+        "sprite_gen/renderer/template_registry.py"
+      ],
+      "outputs": [
+        "server/routes/renderer_config.py",
+        "projects/<project_id>/_drafts/active/renderer_config.json",
+        "client/src/features/result-config/",
+        "tests/integration/test_renderer_config.py"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement POST /projects/{id}/renderer-config using the active plan draft and template compatibility checks",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Persist renderer_config.json with server-derived loop, plan_token, and created_at metadata",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Implement PATCH /projects/{id}/active-draft/renderer-config with args-only edit rules and forbidden-key rejection",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add integration tests and UI support for valid configs, out-of-range args, and stale-draft rejection",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "llm-renderer-config",
+        "project-store"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "animation-commit-and-rerender",
+      "title": "Implement Animation Commit And Re-Render",
+      "goal": "Render from active drafts, atomically commit outputs and v3 animation entries, and support seed-from plus in-place re-render semantics.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "project-store-core",
+        "llm-plan-draft",
+        "renderer-eat-template",
+        "llm-renderer-config-draft"
+      ],
+      "inputs": [
+        "design.md#Animation entry persistence",
+        "design.md#Re-generate semantics",
+        "design.md#In-place re-render の永続化戦略",
+        "projects/<project_id>/_drafts/active/plan.json",
+        "projects/<project_id>/_drafts/active/renderer_config.json"
+      ],
+      "outputs": [
+        "server/routes/animations.py",
+        "projects/<project_id>/animations/<animation_id>/renderer_config.json",
+        "projects/<project_id>/animations/<animation_id>/result.gif",
+        "projects/<project_id>/animations/<animation_id>/spritesheet.png",
+        "tests/integration/test_animation_commit.py"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement POST /projects/{id}/animations with draft completeness checks, plan-token validation, and required-mask revalidation",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Stage renderer outputs under animations/.tmp and atomically commit animation directories plus project.json updates",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Implement seed-from and POST /projects/{id}/animations/{animation_id}/re-render with backup-and-replace rollback",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Return hydrated v3 animation responses and clear active drafts only after successful commit",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "project-store",
+        "template-renderer",
+        "llm-renderer-config"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "project-library-management",
+      "title": "Build Project Library Management",
+      "goal": "Support listing, reopening, duplicating, deleting, and hydrating persisted projects and animations from the filesystem store.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "project-store-core",
+        "animation-commit-and-rerender"
+      ],
+      "inputs": [
+        "design.md#GET /projects",
+        "design.md#Project reload hydration",
+        "design.md#Duplicate-save contract",
+        "projects/<project_id>/project.json"
+      ],
+      "outputs": [
+        "server/routes/project_library.py",
+        "client/src/features/project-library/",
+        "tests/integration/test_project_library.py",
+        "tests/e2e/project-reload-and-duplicate.spec.ts"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Implement GET /projects and GET /projects/{id} with thumbnail summaries, inline renderer_config hydration, and static URLs",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Implement duplicate and delete endpoints with empty-animation duplicate semantics and project cleanup",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Build the project library UI for reopen, duplicate, and delete actions",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add persistence coverage for reload after restart and duplicate-save constraints",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "project-store",
+        "local-app-shell"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "input-to-annotation-ui",
+      "title": "Wire Input To Annotation Screens",
+      "goal": "Connect the input, params, and annotation screens to the backend contracts through the first half of the generation lifecycle.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "image-input-intake",
+        "mask-annotation-flow",
+        "llm-plan-draft"
+      ],
+      "inputs": [
+        "design.md#State / Lifecycle",
+        "design.md#Generate flow alignment with local-app-shell spec",
+        "server/routes/projects_create.py",
+        "server/routes/llm_plan.py",
+        "server/routes/masks.py"
+      ],
+      "outputs": [
+        "client/src/app/router.tsx",
+        "client/src/screens/InputScreen.tsx",
+        "client/src/screens/ParamsScreen.tsx",
+        "client/src/screens/AnnotationScreen.tsx",
+        "tests/e2e/input-to-annotation.spec.ts"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Connect the Input screen to project creation and output-setting validation responses",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Connect the Params screen to llm-plan responses, params PATCH updates, and draft resume behavior",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Connect the Annotation screen to required and optional regions, skip-friendly mask flow, and renderer-config handoff",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add E2E coverage for the upload-to-annotation path including missing-mask prompts",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "local-app-shell",
+        "mask-annotation-ui",
+        "llm-plan-analysis"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "result-flow-and-regeneration-ui",
+      "title": "Wire Result Flow And Regeneration",
+      "goal": "Connect the result screen and animation history UX to renderer-config drafts, rendering, re-rendering, add-another-animation, and reopen flows.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "llm-renderer-config-draft",
+        "animation-commit-and-rerender",
+        "project-library-management",
+        "input-to-annotation-ui"
+      ],
+      "inputs": [
+        "design.md#Re-generate semantics",
+        "design.md#Project reload hydration",
+        "client/src/features/project-library/",
+        "server/routes/animations.py",
+        "server/routes/renderer_config.py"
+      ],
+      "outputs": [
+        "client/src/screens/ResultScreen.tsx",
+        "client/src/features/animation-history/",
+        "client/src/features/regeneration/",
+        "tests/e2e/result-and-regeneration.spec.ts"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Build the Result screen around renderer-config drafts, args editing, and render submission",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Implement Add another animation and seed-from-based Re-generate transitions",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Hydrate reopened projects into result or draft states using library data and active_draft metadata",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add end-to-end coverage for two animations, in-place re-render, and project reopen",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "local-app-shell",
+        "llm-renderer-config",
+        "project-store"
+      ],
+      "size_score": 4
+    },
+    {
+      "id": "failure-recovery-and-polish",
+      "title": "Implement Failure Recovery And UX Polish",
+      "goal": "Make LLM and render failures recoverable without corrupting project state while polishing save, resume, and retry behavior.",
+      "depends_on": [
+        "test-harness-and-fixtures",
+        "llm-plan-draft",
+        "llm-renderer-config-draft",
+        "animation-commit-and-rerender",
+        "project-library-management",
+        "input-to-annotation-ui",
+        "result-flow-and-regeneration-ui"
+      ],
+      "inputs": [
+        "design.md#失敗種別 → HTTP エラー対応",
+        "design.md#Regeneration / retry / save / restore boundaries",
+        "tests/fixtures/claude/mock_claude.py",
+        "client/src/screens/ResultScreen.tsx",
+        "server/routes/animations.py"
+      ],
+      "outputs": [
+        "client/src/features/error-state/",
+        "server/error_mapping.py",
+        "tests/integration/test_llm_failures.py",
+        "tests/e2e/failure-recovery.spec.ts"
+      ],
+      "status": "done",
+      "tasks": [
+        {
+          "id": "1",
+          "title": "Surface retriable versus non-retriable LLM and renderer errors while preserving prompt and output inputs for retry",
+          "status": "done"
+        },
+        {
+          "id": "2",
+          "title": "Implement explicit Save feedback, draft resume on reload, and abandon-draft clearing behavior",
+          "status": "done"
+        },
+        {
+          "id": "3",
+          "title": "Verify that all mapped failure modes leave project files, drafts, and committed animations uncorrupted",
+          "status": "done"
+        },
+        {
+          "id": "4",
+          "title": "Add integration and E2E regression coverage for failure scenarios and recovery after server restart",
+          "status": "done"
+        }
+      ],
+      "owner_capabilities": [
+        "local-app-shell",
+        "llm-plan-analysis",
+        "llm-renderer-config",
+        "project-store"
+      ],
+      "size_score": 4
+    }
+  ],
+  "generated_at": "2026-04-26T04:07:01.368Z",
+  "generated_from": "design.md"
+}
